@@ -23,10 +23,18 @@ function LoginModal({ open, handleClose, openRegister }) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
 
+    if (!email || !password) {
+      alert("Please enter email and password");
+      return;
+    }
+
     try {
+
+      setLoading(true);
 
       const res = await fetch("http://localhost:5000/api/auth/login", {
         method: "POST",
@@ -41,24 +49,28 @@ function LoginModal({ open, handleClose, openRegister }) {
 
       const data = await res.json();
 
-      if (res.ok) {
+      if (!res.ok) {
+        alert(data.message || "Invalid email or password");
+        setLoading(false);
+        return;
+      }
 
-  localStorage.setItem("token", data.token);
+      // Save login data
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-  handleClose();
+      handleClose();
 
-  navigate("/dashboard");
-
-} else {
-
-  alert(data.message || "Login failed");
-
-}
+      navigate("/dashboard");
 
     } catch (error) {
 
-      console.log(error);
+      console.error("Login error:", error);
       alert("Server error");
+
+    } finally {
+
+      setLoading(false);
 
     }
 
@@ -90,7 +102,7 @@ function LoginModal({ open, handleClose, openRegister }) {
           align="center"
           mb={3}
         >
-          Login Form
+          Login
         </Typography>
 
         <Typography variant="body2" mb={1}>
@@ -133,6 +145,7 @@ function LoginModal({ open, handleClose, openRegister }) {
         <Button
           fullWidth
           onClick={handleLogin}
+          disabled={loading}
           sx={{
             background: gradient,
             color: "#fff",
@@ -141,7 +154,7 @@ function LoginModal({ open, handleClose, openRegister }) {
             mb: 2
           }}
         >
-          LOGIN
+          {loading ? "Logging in..." : "LOGIN"}
         </Button>
 
         <Typography align="center" variant="body2">
@@ -160,6 +173,7 @@ function LoginModal({ open, handleClose, openRegister }) {
       </DialogContent>
 
     </Dialog>
+
   );
 
 }

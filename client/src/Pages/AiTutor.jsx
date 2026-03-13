@@ -1,7 +1,7 @@
 import { Box, Typography, Button, TextField } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 import axios from "axios";
 
 function AiTutor({ openLogin }) {
@@ -12,9 +12,19 @@ function AiTutor({ openLogin }) {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
 
+  const chatRef = useRef(null);
+
   const gradient = `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`;
 
   const token = localStorage.getItem("token");
+
+  // Auto scroll chat
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [chat]);
+
 
   const handleSend = async () => {
 
@@ -33,7 +43,7 @@ function AiTutor({ openLogin }) {
     try {
 
       const res = await axios.post(
-        "http://localhost:5000/api/ai",
+        "http://localhost:5000/api/ai/chat",
         { message },
         {
           headers: {
@@ -50,51 +60,100 @@ function AiTutor({ openLogin }) {
       setChat((prev) => [...prev, aiMessage]);
 
     } catch (err) {
-      console.error("AI Error:", err);
 
       setChat((prev) => [
         ...prev,
         { role: "ai", text: "AI failed to respond." }
       ]);
+
     }
 
   };
 
+
   return (
+
     <Box
-      id="aitutor"
       sx={{
-        px: { xs: 3, md: 10 },
-        py: 10,
         display: "flex",
-        gap: 6,
+        height: "100vh",
         backgroundColor: "#000",
         color: "#fff",
-        alignItems: "center",
-        flexWrap: "wrap"
+        overflow: "hidden"
       }}
     >
 
-      {/* LEFT SIDE - CHAT */}
-      <Box sx={{ flex: 1, maxWidth: "600px" }}>
+      {/* LEFT SIDE */}
+<Box
+  sx={{
+    flex: 1,
+    p: 6,
+    display: "flex",
+    flexDirection: "column",
+    height: "100%"
+  }}
+>
 
-        <Typography variant="h2" fontWeight="bold" mb={2}>
-          AI Tutor
-        </Typography>
+  {/* BACK BUTTON */}
+  <Typography
+    sx={{
+      cursor: "pointer",
+      mb: 3,
+      fontSize: "20px"
+    }}
+    onClick={() => navigate(-1)}
+  >
+    ← Back
+  </Typography>
 
-        <Typography
-          sx={{
-            mb: 4,
-            color: "rgba(255,255,255,0.7)"
-          }}
-        >
-          Ask questions, get explanations, and learn faster with your AI tutor.
-        </Typography>
+
+  <Typography variant="h2" fontWeight="bold" mb={1}>
+    AI Tutor
+  </Typography>
+
+  <Typography sx={{ color: "rgba(255,255,255,0.7)", mb: 2 }}>
+    Ask questions, get explanations, and learn faster with your AI tutor.
+  </Typography>
+
+
+  {/* 3D MODEL */}
+  <Box
+    sx={{
+      flex: 1,
+      width: "100%",
+      height: "1500px",
+      overflow: "hidden"
+    }}
+  >
+
+    <spline-viewer
+      url="https://prod.spline.design/77pjClmKrgVrx5w9/scene.splinecode"
+      style={{
+        width: "100%",
+        height: "100%"
+      }}
+    />
+
+  </Box>
+
+</Box>
+
+
+      {/* RIGHT SIDE CHAT */}
+      <Box
+        sx={{
+          flex: 1.2,
+          display: "flex",
+          flexDirection: "column",
+          p: 4
+        }}
+      >
 
         {/* CHAT WINDOW */}
         <Box
+          ref={chatRef}
           sx={{
-            height: "320px",
+            flex: 1,
             background: "#111",
             borderRadius: 3,
             p: 3,
@@ -111,6 +170,7 @@ function AiTutor({ openLogin }) {
           )}
 
           {chat.map((msg, index) => (
+
             <Box
               key={index}
               sx={{
@@ -124,6 +184,7 @@ function AiTutor({ openLogin }) {
                   display: "inline-block",
                   p: 1.5,
                   borderRadius: 2,
+                  maxWidth: "80%",
                   background:
                     msg.role === "user"
                       ? theme.palette.primary.main
@@ -134,9 +195,11 @@ function AiTutor({ openLogin }) {
               </Typography>
 
             </Box>
+
           ))}
 
         </Box>
+
 
         {/* INPUT */}
         <Box sx={{ display: "flex", gap: 2 }}>
@@ -176,22 +239,10 @@ function AiTutor({ openLogin }) {
 
       </Box>
 
-      {/* RIGHT SIDE - SPLINE */}
-      <Box
-        sx={{
-          flex: 1,
-          height: "600px",
-          display: { xs: "none", md: "block" }
-        }}
-      >
-        <spline-viewer
-          url="https://prod.spline.design/77pjClmKrgVrx5w9/scene.splinecode"
-          style={{ width: "100%", height: "100%" }}
-        />
-      </Box>
-
     </Box>
+
   );
+
 }
 
 export default AiTutor;

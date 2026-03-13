@@ -1,11 +1,12 @@
 import express from "express";
-import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 
 import authRoutes from "./routes/auth.js";
 import courseRoutes from "./routes/courses.js";
-import aiRoutes from "./routes/ai.js";   // ✅ ADD THIS
+import aiRoutes from "./routes/ai.js";
+import progressRoutes from "./routes/progress.js";
+import enrollmentRoutes from "./routes/enrollments.js";
 
 import connectDB from "./config/db.js";
 
@@ -17,21 +18,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-/* Connect MongoDB */
+/* Database */
 connectDB();
+
+/* Test route (VERY useful for debugging) */
+app.get("/", (req, res) => {
+  res.send("API is running");
+});
 
 /* Routes */
 app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
-app.use("/api/ai", aiRoutes);   // ✅ ADD THIS
+app.use("/api/ai", aiRoutes);
+app.use("/api/progress", progressRoutes);
+app.use("/api/enrollments", enrollmentRoutes);
 
-/* Test Route (optional but helpful) */
-app.get("/", (req, res) => {
-  res.send("LearnHub API Running");
-});
-
+/* Server */
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

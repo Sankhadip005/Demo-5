@@ -8,149 +8,175 @@ import {
   Rating
 } from "@mui/material";
 
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useState } from "react";
+
 function CourseModal({ open, handleClose, course }) {
+
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   if (!course) return null;
 
+  const handleEnroll = async () => {
+
+    try {
+
+      const storedUser = localStorage.getItem("user");
+
+      if (!storedUser) {
+        alert("Please login first");
+        return;
+      }
+
+      const user = JSON.parse(storedUser);
+      const userId = user._id || user.id;
+      const courseId = course._id;
+
+      if (!userId || !courseId) {
+        console.error("Invalid IDs:", { userId, courseId });
+        alert("Invalid enrollment data");
+        return;
+      }
+
+      console.log("Enrollment Request:", {
+        userId,
+        courseId
+      });
+
+      setLoading(true);
+
+      const res = await axios.post(
+        "http://localhost:5000/api/enrollments",
+        {
+          userId,
+          courseId
+        }
+      );
+
+      console.log("Enrollment Success:", res.data);
+
+      alert("Successfully enrolled!");
+
+      navigate(`/course/${courseId}`);
+
+    } catch (err) {
+
+      console.error("Enrollment error:", err.response?.data || err.message);
+
+      const message =
+        err.response?.data?.message || "Enrollment failed";
+
+      alert(message);
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  };
+
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="lg"
-      fullWidth
-    >
-      <DialogContent sx={{ p: 5 }}>
+    <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
+
+      <DialogContent sx={{ p: { xs: 3, md: 5 } }}>
 
         <Box
           sx={{
             display: "flex",
-            gap: 6,
-            alignItems: "flex-start"
+            flexDirection: { xs: "column", md: "row" },
+            gap: 6
           }}
         >
 
-          {/* LEFT CONTENT */}
+          {/* LEFT SIDE */}
           <Box sx={{ flex: 1 }}>
 
-            {/* TITLE */}
-            <Typography
-              sx={{
-                fontSize: "28px",
-                fontWeight: 700,
-                mb: 1
-              }}
-            >
+            <Typography sx={{ fontSize: "28px", fontWeight: 700, mb: 1 }}>
               {course.title}
             </Typography>
 
-            {/* DESCRIPTION */}
-            <Typography
-              sx={{
-                fontSize: "15px",
-                color: "text.secondary",
-                mb: 3
-              }}
-            >
-              {course.shortDescription}
+            <Typography sx={{ fontSize: "15px", color: "text.secondary", mb: 3 }}>
+              {course.shortDescription || "No description available"}
             </Typography>
 
-            {/* RATING */}
             <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-
-              <Rating
-                value={course.rating || 4.5}
-                precision={0.1}
-                readOnly
-              />
-
+              <Rating value={course.rating || 4.5} precision={0.1} readOnly />
               <Typography sx={{ ml: 1, fontSize: "14px" }}>
-                {course.rating} ({course.students} students)
+                {course.rating || 4.5} ({course.students || 0} students)
               </Typography>
-
             </Box>
 
-            {/* COURSE INFO */}
-            <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-
+            <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
               <Chip label={`⏱ ${course.duration || "8h"}`} size="small" />
-
               <Chip label={`📊 ${course.level || "Beginner"}`} size="small" />
-
-              <Chip label={`👨‍🏫 ${course.instructor}`} size="small" />
-
+              <Chip label={`👨‍🏫 ${course.instructor || "Instructor"}`} size="small" />
             </Box>
 
-            {/* OVERVIEW */}
-            <Typography sx={{ fontWeight: 600, mb: 1, fontSize: "16px" }}>
+            <Typography sx={{ fontWeight: 600, mb: 1 }}>
               Course Overview
             </Typography>
 
-            <Typography
-              sx={{
-                fontSize: "14px",
-                color: "text.secondary",
-                mb: 3
-              }}
-            >
-              {course.overview}
+            <Typography sx={{ fontSize: "14px", color: "text.secondary", mb: 3 }}>
+              {course.overview || "Overview not available"}
             </Typography>
 
-            {/* OBJECTIVES */}
-            <Typography sx={{ fontWeight: 600, mb: 1, fontSize: "16px" }}>
+            <Typography sx={{ fontWeight: 600, mb: 1 }}>
               What You'll Learn
             </Typography>
 
             <Box sx={{ mb: 3 }}>
-
-              {course.objectives?.map((item, i) => (
-                <Typography key={i} sx={{ fontSize: "14px", mb: 0.5 }}>
-                  ✔ {item}
+              {course.objectives?.length ? (
+                course.objectives.map((item, i) => (
+                  <Typography key={i} sx={{ fontSize: "14px", mb: 0.5 }}>
+                    ✔ {item}
+                  </Typography>
+                ))
+              ) : (
+                <Typography fontSize="14px">
+                  Learning outcomes coming soon.
                 </Typography>
-              ))}
-
+              )}
             </Box>
 
-            {/* STACK */}
-            <Typography sx={{ fontWeight: 600, mb: 1, fontSize: "16px" }}>
+            <Typography sx={{ fontWeight: 600, mb: 1 }}>
               Tech Stack
             </Typography>
 
             <Box sx={{ mb: 4 }}>
-
-              {course.stack?.map((tech, i) => (
-                <Box
-                  key={i}
-                  sx={{
-                    display: "inline-block",
-                    mr: 1,
-                    mb: 1,
-                    p: "1px",
-                    borderRadius: "20px",
-                    background:
-                      "linear-gradient(90deg,#4F6BED,#F97316)"
-                  }}
-                >
-                  <Chip
-                    label={tech}
+              {course.stack?.length ? (
+                course.stack.map((tech, i) => (
+                  <Box
+                    key={i}
                     sx={{
-                      background: "#fff",
-                      fontSize: "13px"
+                      display: "inline-block",
+                      mr: 1,
+                      mb: 1,
+                      p: "1px",
+                      borderRadius: "20px",
+                      background: "linear-gradient(90deg,#4F6BED,#F97316)"
                     }}
-                  />
-                </Box>
-              ))}
-
+                  >
+                    <Chip label={tech} sx={{ background: "#fff", fontSize: "13px" }} />
+                  </Box>
+                ))
+              ) : (
+                <Typography fontSize="14px">
+                  Stack not specified
+                </Typography>
+              )}
             </Box>
 
           </Box>
 
           {/* RIGHT SIDE */}
-          <Box sx={{ width: 380 }}>
+          <Box sx={{ width: { xs: "100%", md: 380 } }}>
 
-            {/* IMAGE */}
             <Box
               component="img"
-              src={course.image}
+              src={course.image || "https://via.placeholder.com/400"}
               alt={course.title}
               sx={{
                 width: "100%",
@@ -161,35 +187,26 @@ function CourseModal({ open, handleClose, course }) {
               }}
             />
 
-            {/* PRICE */}
-            <Typography
-              sx={{
-                fontSize: "26px",
-                fontWeight: 700,
-                mb: 2
-              }}
-            >
-              ₹{course.price}
+            <Typography sx={{ fontSize: "26px", fontWeight: 700, mb: 2 }}>
+              ₹{course.price || 0}
             </Typography>
 
-            {/* ENROLL BUTTON */}
             <Button
-              variant="contained"
               fullWidth
+              variant="contained"
+              onClick={handleEnroll}
+              disabled={loading}
               sx={{
-                background:
-                  "linear-gradient(90deg,#4F6BED,#F97316)",
-                textTransform: "none",
-                fontSize: "25px",
-                py: 1.3,
-                mb: 3
+                mb: 3,
+                py: 1.2,
+                fontWeight: 600,
+                background: "linear-gradient(90deg,#4F6BED,#F97316)"
               }}
             >
-              Enroll Now
+              {loading ? "Enrolling..." : "Enroll Now"}
             </Button>
 
-            {/* INCLUDED */}
-            <Typography sx={{ fontWeight: 600, mb: 1, fontSize: "15px" }}>
+            <Typography sx={{ fontWeight: 600, mb: 1 }}>
               This course includes
             </Typography>
 

@@ -1,23 +1,63 @@
-import { Box, Typography, Card, CardContent } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Button
+} from "@mui/material";
+
 import Navbar from "../components/Navbar";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
 
   const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  const userId = user?._id || user?.id;
+
 
   useEffect(() => {
 
-    axios.get("http://localhost:5000/api/enrollments", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => setCourses(res.data))
-    .catch(err => console.log(err));
+    if (!token || !userId) {
+      navigate("/");
+      return;
+    }
 
-  }, []);
+    const fetchCourses = async () => {
+
+      try {
+
+        const res = await axios.get(
+          `http://localhost:5000/api/enrollments/${userId}`
+        );
+
+        setCourses(res.data || []);
+
+      } catch (err) {
+
+        console.error("Dashboard fetch error:", err);
+        setCourses([]);
+
+      } finally {
+
+        setLoading(false);
+
+      }
+
+    };
+
+    fetchCourses();
+
+  }, [navigate, token, userId]);
+
 
   return (
     <>
@@ -31,19 +71,18 @@ function Dashboard() {
         }}
       >
 
-        <Typography
-          variant="h4"
-          sx={{ fontWeight: 700, mb: 6 }}
-        >
+        <Typography variant="h4" fontWeight="700" mb={6}>
           Your Learning Progress
         </Typography>
 
+        {loading ? (
 
-        {courses.length === 0 ? (
+          <Typography>Loading courses...</Typography>
+
+        ) : courses.length === 0 ? (
 
           <Typography color="text.secondary">
-            You are not enrolled in any courses yet.  
-            Explore courses to start learning.
+            You are not enrolled in any courses yet.
           </Typography>
 
         ) : (
@@ -51,31 +90,50 @@ function Dashboard() {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "repeat(3,1fr)",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "1fr 1fr",
+                md: "1fr 1fr 1fr"
+              },
               gap: 4
             }}
           >
 
-            {courses.map((course) => {
+            {courses.map((enroll) => {
+
+              const course = enroll.courseId || {};
+
+              const completed = enroll.completedVideos || 0;
+              const total = enroll.totalVideos || 0;
 
               const progress =
-                (course.completedVideos / course.totalVideos) * 100;
+                total > 0 ? (completed / total) * 100 : 0;
 
               return (
-                <Card key={course._id}>
+
+                <Card
+                  key={enroll._id}
+                  sx={{
+                    borderRadius: 3,
+                    boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
+                    transition: "0.3s",
+                    "&:hover": {
+                      transform: "translateY(-6px)"
+                    }
+                  }}
+                >
 
                   <CardContent>
 
-                    <Typography fontWeight="600">
-                      {course.title}
+                    <Typography fontWeight="600" mb={1}>
+                      {course.title || "Course"}
                     </Typography>
 
-                    <Typography
-                      variant="body2"
-                      sx={{ mt: 1 }}
-                    >
-                      {course.completedVideos} / {course.totalVideos} videos completed
+                    <Typography variant="body2">
+                      {completed} / {total} videos completed
                     </Typography>
+
+                    {/* Progress Bar */}
 
                     <Box
                       sx={{
@@ -98,17 +156,31 @@ function Dashboard() {
 
                     </Box>
 
-                    <Typography
-                      variant="body2"
-                      sx={{ mt: 1 }}
-                    >
+                    <Typography variant="body2" sx={{ mt: 1, mb: 2 }}>
                       {Math.round(progress)}% completed
                     </Typography>
+
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={() =>
+                        navigate(`/course/${course._id}`)
+                      }
+                      sx={{
+                        background:
+                          "linear-gradient(90deg,#4F6BED,#F97316)",
+                        fontWeight: 600
+                      }}
+                    >
+                      Continue Learning
+                    </Button>
 
                   </CardContent>
 
                 </Card>
+
               );
+
             })}
 
           </Box>
