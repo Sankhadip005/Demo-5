@@ -88,9 +88,7 @@ function Navbar({ openLogin, openRegister }) {
   /* Navigation handlers */
 
   const handleLogo = () => {
-    if (token) {
-      navigate("/");
-    } else {
+    if (!token) {
       scrollToSection("hero");
     }
   };
